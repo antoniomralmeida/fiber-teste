@@ -5,6 +5,15 @@ import (
 	"strings"
 )
 
+/*
+Fuzzy logic operators - Zadeh Basic Operators
+Fuzzy logic works with membership values in a way that mimics Boolean logic. To this end, replacements for basic operators AND, OR, NOT must be available.
+
+Boolean		Fuzzy		GOLANG expression
+AND(x,y)	MIN(x,y)	(x<y?x:y)
+OR(x,y)		MAX(x,y)	(x>y?x:y)
+NOT(x)		1 – x		** not implemented
+*/
 func SliceToString(slice []string) string {
 	ret := ""
 	for x := range slice {
@@ -45,7 +54,7 @@ func FuzzyLogicalInference(exp string) string {
 	i_stack := 100
 	key := "base"
 	stack[key] = exp
-
+	//Find subexpressions
 oulter:
 	for {
 		i := -1
@@ -91,11 +100,13 @@ oulter:
 			break
 		}
 	}
+
+	//keys of subexpressions
 	keys := []string{}
 	for key := range stack {
 		keys = append(keys, key)
 	}
-
+	//Application of fuzzy logic operations
 	for {
 		var found bool
 		for i := len(keys) - 1; i >= 0; i-- {
@@ -107,7 +118,7 @@ oulter:
 			break
 		}
 	}
-
+	//substitution of subexpressions
 	exp = stack["base"]
 	for {
 		found := false
@@ -121,5 +132,9 @@ oulter:
 			break
 		}
 	}
+
+	/* Recomended use // https://github.com/PaesslerAG/gval to evaluate fuzzy logical expression
+	use: i, err := gval.Evaluate(exp, nil)
+	*/
 	return exp
 }
