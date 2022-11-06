@@ -20,11 +20,15 @@ func ToPrefixSingleLogic(exp string) (string, bool) {
 	for x := range s {
 		switch s[x] {
 		case "and":
-			fmt.Println(exp, "=> ", "math.Min( "+SliceToString(s[:x])+" , "+SliceToString(s[x+1:])+" )")
-			return "math.Min( " + SliceToString(s[:x]) + " , " + SliceToString(s[x+1:]) + " )", true
+			s[x] = s[x-1]
+			s[x-1] = "math.Min("
+			s[x+1] = ", " + s[x+1] + " ) "
+			return SliceToString(s), true
 		case "or":
-			fmt.Println(exp, "=> ", "math.Max( "+SliceToString(s[:x])+" , "+SliceToString(s[x+1:])+" )")
-			return "math.Max( " + SliceToString(s[:x]) + " , " + SliceToString(s[x+1:]) + " )", true
+			s[x] = s[x-1]
+			s[x-1] = "math.Max("
+			s[x+1] = ", " + s[x+1] + " ) "
+			return SliceToString(s), true
 		}
 	}
 	return exp, false
