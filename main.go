@@ -3,14 +3,18 @@ package main
 import (
 	"fmt"
 	"strings"
+
+	"github.com/PaesslerAG/gval"
 )
 
 func SliceToString(slice []string) string {
 	ret := ""
-	sep := ""
 	for x := range slice {
-		ret = ret + sep + slice[x]
-		sep = " "
+		if slice[x] == "and" || slice[x] == "or" {
+			ret = ret + " " + slice[x] + " "
+		} else {
+			ret = ret + slice[x]
+		}
 	}
 	return ret
 }
@@ -19,21 +23,26 @@ func ToPrefixSingleLogic(exp string) (string, bool) {
 	s := strings.Split(exp, " ")
 	for x := range s {
 		switch s[x] {
-		case "and":
-			s[x] = s[x-1]
-			s[x-1] = "math.Min("
-			s[x+1] = ", " + s[x+1] + " ) "
-			return SliceToString(s), true
 		case "or":
 			s[x] = s[x-1]
-			s[x-1] = "math.Max("
-			s[x+1] = ", " + s[x+1] + " ) "
+			s[x-1] = "(" + s[x-1] + ">" + s[x+1] + "?"
+			s[x+1] = ":" + s[x+1] + ")"
+			return SliceToString(s), true
+		}
+	}
+	for x := range s {
+		switch s[x] {
+		case "and":
+			s[x] = s[x-1]
+			s[x-1] = "(" + s[x-1] + "<" + s[x+1] + "?"
+			s[x+1] = ":" + s[x+1] + ")"
 			return SliceToString(s), true
 		}
 	}
 	return exp, false
 }
-func ToPrefix(exp string) string {
+
+func ToFuzzyExpression(exp string) string {
 	stack := make(map[string]string)
 	i_stack := 1000
 	key := "base"
@@ -80,47 +89,51 @@ oulter:
 				}
 			}
 
+		} else {
+			break
 		}
+	}
+	keys := []string{}
+	for key := range stack {
+		keys = append(keys, key)
 	}
 
 	for {
 		var found bool
-		for key := range stack {
+		for i := len(keys) - 1; i >= 0; i-- {
 			var f bool
-			stack[key], f = ToPrefixSingleLogic(stack[key])
+			stack[keys[i]], f = ToPrefixSingleLogic(stack[keys[i]])
 			found = found || f
 		}
 		if !found {
 			break
 		}
-
 	}
+
 	exp = stack["base"]
-	fmt.Println(exp)
 	for {
-		s := strings.Split(exp, " ")
 		found := false
-		for x := range s {
-			v, ok := stack[s[x]]
-			if ok {
-				exp = strings.Replace(exp, s[x], v, -1)
+		for i := len(keys) - 1; i > 0; i-- {
+			if strings.Contains(exp, keys[i]) {
+				exp = strings.Replace(exp, keys[i], stack[keys[i]], -1)
 				found = true
 			}
 		}
 		if !found {
 			break
 		}
-		fmt.Println(exp)
 	}
 	return exp
 }
 
+// https://github.com/PaesslerAG/gval
 // Driver code
 func main() {
-	s := ("x and (w or (a and b)) or (x and y)")
-
-	fmt.Println(s, ToPrefix(s))
-
-	//math.Max(math.Min(x, math.Max(w, math.Min(a, b)), math.Min(x, y)))
-
+	s := ("70.12 and ( 85. or ( 7. and 90. ) ) or ( 70. and 100. )")
+	//s := "71. or 80.3"
+	exp := ToFuzzyExpression(s)
+	fmt.Println(s, exp)
+	//exp = "9>4 || 2==10"
+	i, err := gval.Evaluate(exp, nil)
+	fmt.Println(i, err)
 }
