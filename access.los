@@ -1,0 +1,2 @@
+Timestamp,Latency,Code,Method,Path,IP,Req Values,In,Out,Request
+1667149844193,440.8µs,200,GET,/,::1,,0,10,
